@@ -106,6 +106,34 @@ pre{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding
  .kv{grid-template-columns:100px 1fr}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* LeadFinder: profundidade, fotografia de fundo e movimento discreto */
+body{position:relative;isolation:isolate;background:#101318}
+body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;background:linear-gradient(115deg,rgba(10,13,19,.94) 0%,rgba(10,13,19,.84) 48%,rgba(10,13,19,.93) 100%),url("https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=2200&q=85") center/cover no-repeat;transform:scale(1.025);animation:lf-bg-drift 28s ease-in-out infinite alternate}
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 70% 10%,rgba(94,130,255,.10),transparent 42%),linear-gradient(180deg,rgba(9,12,17,.10),rgba(9,12,17,.42))}
+.app{position:relative;perspective:1400px}
+aside{background:rgba(19,22,29,.88);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:12px 0 36px rgba(0,0,0,.16)}
+main{position:relative;transform-style:preserve-3d}
+.card{background:linear-gradient(145deg,rgba(30,34,43,.91),rgba(20,23,30,.91));backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 14px 36px rgba(0,0,0,.16);transition:transform .28s ease,border-color .25s,box-shadow .28s}
+.card:hover{border-color:#424b5d;box-shadow:0 20px 42px rgba(0,0,0,.23)}
+.stat{transform-style:preserve-3d;transition:transform .25s ease,box-shadow .25s}
+.stat:hover{transform:translateY(-4px) rotateX(2deg);box-shadow:0 18px 36px rgba(0,0,0,.24)}
+.btn{border-radius:8px;backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:none;background:#252a33;border-color:#3a414d;transition:transform .18s ease,background .18s,border-color .18s}
+.btn:hover{transform:translateY(-2px);background:#303744;border-color:#65718a;box-shadow:0 8px 18px rgba(0,0,0,.18)}
+.btn.p{background:#6375e7;border-color:#8492ff;box-shadow:0 5px 18px rgba(99,117,231,.18)}
+.btn.p:hover{background:#7182f0;border-color:#a1acff}
+.btn.wa{background:#247a58;border-color:#3caa7e}
+.results .lead{transform-style:preserve-3d}
+.results .lead:hover{transform:translateY(-5px) rotateX(1deg);box-shadow:0 22px 40px rgba(0,0,0,.25)}
+.nav{transition:transform .18s ease,background .18s,color .18s}
+.nav:hover{transform:translateX(3px)}
+h1{letter-spacing:-.04em;text-shadow:0 3px 24px rgba(0,0,0,.2)}
+.reveal-ready .reveal-in{opacity:0;transform:translateY(14px);transition:opacity .55s ease,transform .55s cubic-bezier(.2,.7,.2,1)}
+.reveal-ready .reveal-in.in-view{opacity:1;transform:translateY(0)}
+@keyframes lf-bg-drift{from{transform:scale(1.025) translate3d(0,0,0)}to{transform:scale(1.08) translate3d(-.5%,.4%,0)}}
+@media(max-width:700px){body::before{background-position:58% center;animation:none}.card{backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}}
+@media(prefers-reduced-motion:reduce){body::before{animation:none}.card,.stat,.btn,.nav{transition:none!important}.reveal-ready .reveal-in{opacity:1;transform:none;transition:none}}
+
 </style>
 </head>
 <body>
@@ -303,7 +331,33 @@ function closeMenu(){$('#side').classList.remove('open');$('#scrim').classList.r
 function rows(){return Object.values(saved).map(s=>{const l=s.lead;return [l.name,l.category,l.city,l.phone,l.whatsapp,l.instagram,l.website,l.rating,s.status,s.notes]})}
 const HEAD=['Nome','Categoria','Cidade','Telefone','WhatsApp','Instagram','Site','Avaliação','Status','Observações'];
 function csv(){return '\uFEFF'+[HEAD,...rows()].map(r=>r.map(c=>`"${String(c??'').replace(/"/g,'""')}"`).join(';')).join('\n')}
-function xls(){const t=r=>`<tr>${r.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`;return `<html><head><meta charset="utf-8"></head><body><table>${t(HEAD)}${rows().map(t).join('')}</table></body></html>`}
+function xls(){const t=r=>`<tr>${r.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`;return `<html><head><meta charset="utf-8"></head><body><table>${t(HEAD)}${rows().map(t).join('')}</table>
+<script>
+(function(){
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.documentElement.classList.add('reveal-ready');
+  const decorate = () => {
+    const main = document.querySelector('main');
+    if (!main) return;
+    main.querySelectorAll('.card, h1, .sub, .grid, .results').forEach(el => {
+      if (!el.classList.contains('reveal-in')) el.classList.add('reveal-in');
+    });
+    const items = main.querySelectorAll('.reveal-in:not(.in-view)');
+    if (!('IntersectionObserver' in window)) { items.forEach(el=>el.classList.add('in-view')); return; }
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) { entry.target.classList.add('in-view'); observer.unobserve(entry.target); }
+      });
+    }, {threshold:.08, rootMargin:'0px 0px -24px 0px'});
+    items.forEach(el=>observer.observe(el));
+  };
+  decorate();
+  const root = document.querySelector('#app') || document.body;
+  new MutationObserver(() => decorate()).observe(root, {childList:true,subtree:true});
+})();
+</script>
+
+</body></html>`}
 function dl(name,data,type){try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove()}catch(e){}}
 function exportModal(){if(!Object.keys(saved).length){toast('Salve leads antes de exportar');return}
  $('#sheet').innerHTML=`<div style="display:flex;justify-content:space-between"><h2>Exportar leads</h2><button class="btn sm" data-a="close">Fechar</button></div><p class="meta">${Object.keys(saved).length} leads. Se o download não iniciar neste ambiente, copie o CSV abaixo.</p>
