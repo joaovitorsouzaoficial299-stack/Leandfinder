@@ -88,7 +88,7 @@ pre{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding
  <button class="nav" data-v="saved">Leads salvos <b id="nSaved">0</b></button>
  <button class="nav" data-v="mine">Meus leads</button>
  <button class="nav" data-v="cfg">Configurações</button>
- <div class="demo">Sem a API configurada, a busca usa dados de demonstração.</div>
+ <div class="demo">Busca real via OpenStreetMap</div>
 </aside>
 <main>
  <div class="top"><button class="btn" id="burger" aria-label="Abrir menu">Menu</button><b style="font-size:18px">LeadFinder</b></div>
@@ -148,14 +148,14 @@ async function osmSearch(p,c){const f=p.category==='custom'?`["name"~"${String(p
   const ad=[t['addr:street'],t['addr:housenumber'],t['addr:suburb']].filter(Boolean).join(', ');
   return{id:`osm-${e.type}-${e.id}`,name:t.name,category:t.shop||t.amenity||t.office||t.leisure||'Negócio',address:ad||'Endereço não informado',rating:null,reviews:null,phone:ph,hours:t.opening_hours||'',openNow:null,
    lat:e.lat??(e.center&&e.center.lat),lng:e.lon??(e.center&&e.center.lon),...splitC(t.website||t['contact:website'],t['contact:instagram']||t.instagram,ph,t['contact:whatsapp'])}})}
-/* services/leads — ponto único de integração. Para usar um backend próprio, troque o corpo de search(). */
+/* Busca real pelo endpoint serverless; nunca substitui falhas por dados fictícios. */
 const LeadsService={
  async search(p){
-  try{const c=await geocode(p.location),k=gkey();
-   const leads=k?await googleSearch(p,c,k):await osmSearch(p,c);
-   const [city,uf]=p.location.split(',').map(s=>s.trim());SRC=k?'Google Places':'OpenStreetMap';ERR='';
-   return leads.map(l=>({...l,city:city||'',state:uf||''}))}
-  catch(e){SRC='demo';ERR=e.message||'falha na busca';return mockProvider(p)}
+  const r=await fetch('/api/search?'+new URLSearchParams({location:p.location,category:p.category,radius:String(p.radius),custom:p.custom||''}));
+  let data={};try{data=await r.json()}catch(e){}
+  if(!r.ok) throw new Error(data.error||'Não foi possível buscar empresas agora.');
+  SRC=data.source||'OpenStreetMap';ERR='';
+  return (data.leads||[]).map(l=>({...l,city:l.city||p.location,state:l.state||''}));
  }
 };
 function rng(seed){let s=seed;return()=>{s=(s*1664525+1013904223)%4294967296;return s/4294967296}}
@@ -224,15 +224,15 @@ function detail(id){const l=results.find(x=>x.id===id)||(saved[id]&&saved[id].le
 
 /* ============ views ============ */
 const V={
- dash(){const d=DEMO_STATS,mx=Math.max(...d.weekly.map(w=>w[1])),st=[['Leads encontrados',d.found],['Leads sem site',d.nosite],['Leads salvos',d.saved],['Contatados',d.contacted],['Em negociação',d.neg],['Clientes conquistados',d.won]];
-  const fn=[['Encontrados',d.found],['Sem site',d.nosite],['Salvos',d.saved],['Contatados',d.contacted],['Negociação',d.neg],['Clientes',d.won]];
-  return `<h1>Painel</h1><p class="sub">Números de exemplo para demonstração — troque pelo retorno real em <code>DEMO_STATS</code>.</p>
+ dash(){const all=Object.values(saved), total=all.length, d={found:total,nosite:all.filter(s=>!s.lead.website).length,saved:total,contacted:all.filter(s=>s.status!=='Novo').length,neg:all.filter(s=>s.status==='Em negociação').length,won:all.filter(s=>s.status==='Cliente').length,weekly:[['Salvos',total]]},mx=Math.max(1,...d.weekly.map(w=>w[1])),st=[['Leads salvos',d.found],['Sem site',d.nosite],['Salvos',d.saved],['Contatados',d.contacted],['Em negociação',d.neg],['Clientes',d.won]];
+  const fn=[['Salvos',d.found],['Sem site',d.nosite],['Salvos',d.saved],['Contatados',d.contacted],['Negociação',d.neg],['Clientes',d.won]];
+  return `<h1>Painel</h1><p class="sub">Resumo dos leads salvos neste navegador. As métricas não incluem empresas que ainda não foram salvas.</p>
   <div class="grid stats">${st.map(s=>`<div class="card stat"><small>${s[0]}</small><div>${s[1].toLocaleString('pt-BR')}</div></div>`).join('')}</div>
   <div class="grid two"><div class="card"><h2>Leads por semana</h2><div class="bars">${d.weekly.map(w=>`<div>${w[1]}<span style="height:${w[1]/mx*100}%"></span>${w[0]}</div>`).join('')}</div></div>
   <div class="card funnel"><h2>Funil de prospecção</h2>${fn.map(f=>`<div class="row"><span>${f[0]}</span><div class="t"><i style="width:${Math.max(2,f[1]/d.found*100)}%"></i></div><b>${f[1]}</b></div>`).join('')}</div></div>
   <div style="margin-top:16px"><button class="btn p" data-go="search">Buscar leads</button></div>`},
  search(){const q=lastQuery,list=filtered();
-  return `<h1>Encontrar novos leads</h1><p class="sub">Escolha uma categoria e a região. Resultados de demonstração até a API real ser conectada.</p>
+  return `<h1>Encontrar novos leads</h1><p class="sub">Busque empresas reais por categoria e região. Os dados disponíveis dependem do cadastro no OpenStreetMap.</p>
   <div class="card"><div class="row2"><div><label for="q-cat">🔍 Categoria de busca</label><select id="q-cat">${CATS.map(c=>`<option value="${c.id}" ${c.id===q.category?'selected':''}>${c.i} ${c.l}</option>`).join('')}</select></div>
   <div><label for="q-loc">Localização</label><input id="q-loc" value="${esc(q.location)}" placeholder="Anápolis, GO"></div>
   <div><label for="q-rad">Raio</label><select id="q-rad">${[1,5,10,25,50].map(k=>`<option value="${k}" ${k==q.radius?'selected':''}>${k} km</option>`).join('')}</select></div>
@@ -283,7 +283,7 @@ function exportModal(){if(!Object.keys(saved).length){toast('Salve leads antes d
 async function doSearch(){const c=$('#q-cat').value,loc=$('#q-loc').value.trim();
  if(!loc){toast('Informe a localização');$('#q-loc').focus();return}
  lastQuery={category:c,location:loc,radius:+$('#q-rad').value,custom:($('#q-cus')||{}).value||''};
- results=await LeadsService.search(lastQuery);render();toast(results.length+(SRC==='demo'?' leads de demonstração ('+ERR+')':' leads encontrados via '+SRC))}
+ try{results=await LeadsService.search(lastQuery);render();toast(results.length+' empresas encontradas via '+SRC)}catch(err){results=[];render();toast(err.message||'Falha na busca');}}
 function readF(){F={site:$('#f-site').value,ig:$('#f-ig').value==='1',wa:$('#f-wa').value==='1',minR:+$('#f-r').value,minRev:+$('#f-rev').value||0,open:$('#f-open').value==='1',contacted:$('#f-c').value}}
 function saveLead(id,notes){const l=results.find(x=>x.id===id)||(saved[id]&&saved[id].lead);if(!l)return;
  if(saved[id]){if(notes!=null)saved[id].notes=notes}else saved[id]={lead:l,status:'Novo',notes:notes||'',savedAt:Date.now()};persist()}
