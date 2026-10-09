@@ -38,15 +38,15 @@ module.exports=async(req,res)=>{
   }
   // Aumenta a cobertura: até 1.000 elementos nomeados dentro do raio.
   const query='[out:json][timeout:25];('+['node','way','relation'].map(type=>type+selector+'["name"](around:'+around+','+lat+','+lon+');').join('')+');out center tags 1000;';
-  let data=null,lastStatus=0;
+  let data=null,lastStatus=0,lastEndpointError='';
   for(const endpoint of ['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter','https://overpass.nchc.org.tw/api/interpreter']){
    try{
     const r=await request(endpoint,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded','User-Agent':'LeadFinder/1.0'},body:'data='+encodeURIComponent(query)},35000);
-    lastStatus=r.status;if(!r.ok)continue;
+    lastStatus=r.status;if(!r.ok){lastEndpointError=endpoint+' respondeu HTTP '+r.status;continue;}
     const parsed=await r.json();if(Array.isArray(parsed.elements)){data=parsed;break;}
-   }catch(e){}
+   }catch(e){lastEndpointError=e.name==='AbortError'?'tempo limite em '+endpoint:(e.message||'falha de conexão em '+endpoint);}
   }
-  if(!data)throw new Error('As fontes gratuitas estão sobrecarregadas. Aguarde um pouco e tente novamente.');
+  if(!data)throw new Error('As fontes gratuitas não responderam. '+(lastEndpointError||('Último status: '+lastStatus))+'. Tente novamente em alguns instantes.');
   const seen=new Set(),leads=[];
   for(const e of data.elements||[]){
    const t=e.tags||{},name=clean(t.name);if(!name)continue;
