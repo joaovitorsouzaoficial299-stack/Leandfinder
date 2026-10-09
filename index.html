@@ -331,33 +331,7 @@ function closeMenu(){$('#side').classList.remove('open');$('#scrim').classList.r
 function rows(){return Object.values(saved).map(s=>{const l=s.lead;return [l.name,l.category,l.city,l.phone,l.whatsapp,l.instagram,l.website,l.rating,s.status,s.notes]})}
 const HEAD=['Nome','Categoria','Cidade','Telefone','WhatsApp','Instagram','Site','Avaliação','Status','Observações'];
 function csv(){return '\uFEFF'+[HEAD,...rows()].map(r=>r.map(c=>`"${String(c??'').replace(/"/g,'""')}"`).join(';')).join('\n')}
-function xls(){const t=r=>`<tr>${r.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`;return `<html><head><meta charset="utf-8"></head><body><table>${t(HEAD)}${rows().map(t).join('')}</table>
-<script>
-(function(){
-  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  document.documentElement.classList.add('reveal-ready');
-  const decorate = () => {
-    const main = document.querySelector('main');
-    if (!main) return;
-    main.querySelectorAll('.card, h1, .sub, .grid, .results').forEach(el => {
-      if (!el.classList.contains('reveal-in')) el.classList.add('reveal-in');
-    });
-    const items = main.querySelectorAll('.reveal-in:not(.in-view)');
-    if (!('IntersectionObserver' in window)) { items.forEach(el=>el.classList.add('in-view')); return; }
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) { entry.target.classList.add('in-view'); observer.unobserve(entry.target); }
-      });
-    }, {threshold:.08, rootMargin:'0px 0px -24px 0px'});
-    items.forEach(el=>observer.observe(el));
-  };
-  decorate();
-  const root = document.querySelector('#app') || document.body;
-  new MutationObserver(() => decorate()).observe(root, {childList:true,subtree:true});
-})();
-</script>
-
-</body></html>`}
+function xls(){const t=r=>`<tr>${r.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`;return `<html><head><meta charset="utf-8"></head><body><table>${t(HEAD)}${rows().map(t).join('')}</table></body></html>`}
 function dl(name,data,type){try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove()}catch(e){}}
 function exportModal(){if(!Object.keys(saved).length){toast('Salve leads antes de exportar');return}
  $('#sheet').innerHTML=`<div style="display:flex;justify-content:space-between"><h2>Exportar leads</h2><button class="btn sm" data-a="close">Fechar</button></div><p class="meta">${Object.keys(saved).length} leads. Se o download não iniciar neste ambiente, copie o CSV abaixo.</p>
@@ -401,5 +375,31 @@ document.addEventListener('change',e=>{
 document.addEventListener('keydown',e=>{if(e.key==='Escape')$('#modal').classList.remove('on');if(e.key==='Enter'&&e.target.id==='q-loc')doSearch()});
 render();
 </script>
+
+<script>
+(function(){
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  document.documentElement.classList.add('reveal-ready');
+  const decorate = () => {
+    const main = document.querySelector('main');
+    if (!main) return;
+    main.querySelectorAll('.card, h1, .sub, .grid, .results').forEach(el => {
+      if (!el.classList.contains('reveal-in')) el.classList.add('reveal-in');
+    });
+    const items = main.querySelectorAll('.reveal-in:not(.in-view)');
+    if (!('IntersectionObserver' in window)) { items.forEach(el=>el.classList.add('in-view')); return; }
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) { entry.target.classList.add('in-view'); observer.unobserve(entry.target); }
+      });
+    }, {threshold:.08, rootMargin:'0px 0px -24px 0px'});
+    items.forEach(el=>observer.observe(el));
+  };
+  decorate();
+  const root = document.querySelector('#app') || document.body;
+  new MutationObserver(() => decorate()).observe(root, {childList:true,subtree:true});
+})();
+</script>
+
 </body>
 </html>
