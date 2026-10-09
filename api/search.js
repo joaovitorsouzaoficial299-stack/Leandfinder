@@ -1,11 +1,11 @@
 const TAGS = {
- loja:'nwr["shop"]', rest:'nwr["amenity"~"^(restaurant|fast_food|food_court|cafe|bar|pub|ice_cream)$"]',
- barb:'nwr["shop"~"^(hairdresser|barber)$"]', salao:'nwr["shop"~"^(hairdresser|beauty)$"]',
- odon:'nwr["amenity"="dentist"]', acad:'nwr["leisure"~"^(fitness_centre|sports_centre)$"]',
- assist:'nwr["shop"~"^(mobile_phone|computer|electronics|repair)$"]', imob:'nwr["office"="estate_agent"]',
- ofic:'nwr["shop"~"^(car_repair|motorcycle_repair|tyres)$"]', pet:'nwr["shop"="pet"]',
- roupa:'nwr["shop"="clothes"]', cel:'nwr["shop"="mobile_phone"]',
- local:'nwr["name"]["shop"]', perto:'nwr["name"]'
+ loja:'["shop"]', rest:'["amenity"~"^(restaurant|fast_food|food_court|cafe|bar|pub|ice_cream)$"]',
+ barb:'["shop"~"^(hairdresser|barber)$"]', salao:'["shop"~"^(hairdresser|beauty)$"]',
+ odon:'["amenity"="dentist"]', acad:'["leisure"~"^(fitness_centre|sports_centre)$"]',
+ assist:'["shop"~"^(mobile_phone|computer|electronics|repair)$"]', imob:'["office"="estate_agent"]',
+ ofic:'["shop"~"^(car_repair|motorcycle_repair|tyres)$"]', pet:'["shop"="pet"]',
+ roupa:'["shop"="clothes"]', cel:'["shop"="mobile_phone"]',
+ local:'["name"]["shop"]', perto:'["name"]'
 };
 const LABELS={loja:'lojas',rest:'restaurantes',barb:'barbearias',salao:'salões de beleza',odon:'clínicas odontológicas',acad:'academias',assist:'assistências técnicas',imob:'imobiliárias',ofic:'oficinas mecânicas',pet:'pet shops',roupa:'lojas de roupas',cel:'lojas de celulares',local:'empresas locais',perto:'negócios próximos'};
 const clean=v=>String(v||'').trim().slice(0,100);
@@ -34,7 +34,7 @@ module.exports=async(req,res)=>{
   if(category==='custom'){
    const term=clean(p.custom).replace(/[.*+?^${}()|[\]\\]/g,' ').replace(/["']/g,'').trim().slice(0,60);
    if(!term)return res.status(400).json({error:'Digite um termo válido para a busca personalizada.'});
-   selector='nwr["name"~"'+term.replace(/\s+/g,'|')+'",i]';
+   selector='["name"~"'+term.replace(/\s+/g,'|')+'",i]';
   }
   // Aumenta a cobertura: até 1.000 elementos nomeados dentro do raio.
   const query='[out:json][timeout:25];('+['node','way','relation'].map(type=>type+selector+'["name"](around:'+around+','+lat+','+lon+');').join('')+');out center tags 1000;';
