@@ -201,7 +201,7 @@ function filtered(){return results.filter(l=>{
 
 /* ============ componentes ============ */
 function card(l){const s=score(l),t=tier(s),sv=saved[l.id];
- return `<article class="card lead"><div class="tags">${l.website?'':'<span class="tag nosite">🚨 SEM SITE</span>'}<span class="tag ${t[1]}">${t[0]}</span>${l.demo?'<span class="badge">DEMO</span>':''}</div>
+ return `<article class="card lead"><div class="tags">${l.website?'':'<span class="tag nosite">🚨 SEM SITE CADASTRADO</span>'}<span class="tag ${t[1]}">${t[0]}</span>${l.demo?'<span class="badge">DEMO</span>':''}</div>
  <h3>${esc(l.name)}</h3><div class="meta">${esc(l.category)} · 📍 ${esc(l.address)}, ${esc(l.city)}</div>
  <div class="meta">⭐ ${l.rating??'—'} · 💬 ${l.reviews??'—'} avaliações${l.openNow==null?'':l.openNow?' · Aberto agora':' · Fechado'}</div>
  <div class="meta">🌐 ${l.website?esc(l.website.replace('https://','')):'Sem site'} · 📱 ${esc(l.instagram||'—')}<br>📞 ${esc(l.phone)} · 💬 ${l.whatsapp?'WhatsApp ok':'—'}</div>
@@ -239,7 +239,7 @@ const V={
   <button class="btn p" data-a="search" style="min-height:44px">BUSCAR LEADS</button></div>
   <div id="cw" style="margin-top:10px;${q.category==='custom'?'':'display:none'}"><label for="q-cus">Tipo de negócio</label><input id="q-cus" value="${esc(q.custom)}" placeholder="Ex.: Floricultura"></div></div>
   <details class="card" style="margin-top:14px"><summary>Filtros avançados</summary><div class="filters">
-  <div><label>Site</label><select id="f-site"><option value="">Todos</option><option value="sem" ${F.site==='sem'?'selected':''}>Não possui site</option><option value="com" ${F.site==='com'?'selected':''}>Possui site</option></select></div>
+  <div><label>Site</label><select id="f-site"><option value="">Todos</option><option value="sem" ${F.site==='sem'?'selected':''}>Sem site cadastrado</option><option value="com" ${F.site==='com'?'selected':''}>Possui site</option></select></div>
   <div><label>Instagram</label><select id="f-ig"><option value="0">Indiferente</option><option value="1" ${F.ig?'selected':''}>Possui Instagram</option></select></div>
   <div><label>WhatsApp</label><select id="f-wa"><option value="0">Indiferente</option><option value="1" ${F.wa?'selected':''}>Possui WhatsApp</option></select></div>
   <div><label>Avaliação mínima</label><select id="f-r">${[0,3,3.5,4,4.5].map(k=>`<option value="${k}" ${k==F.minR?'selected':''}>${k||'Qualquer'}</option>`).join('')}</select></div>
@@ -262,7 +262,7 @@ const V={
   <div class="card"><h2>Fonte de dados</h2><p class="meta">Fonte da última busca: <b>${SRC}</b>. Por padrão usa o OpenStreetMap (grátis, sem avaliações). Com uma chave do Google Places, traz avaliações e detecta melhor quem não tem site.</p></div>
   <div class="card" style="margin-top:14px"><h2>Chave do Google Places (opcional)</h2><label for="g-key">Chave de API</label><input id="g-key" value="${esc(gkey())}" placeholder="Cole sua chave" autocomplete="off"><p class="meta">Fica salva só neste navegador. Restrinja a chave ao seu domínio no Google Cloud.</p><button class="btn p" data-a="savekey">Salvar chave</button></div>
   <div class="card" style="margin-top:14px"><h2>Entidades preparadas para Supabase</h2><div class="ents">${['users','leads','saved_leads','lead_notes','lead_status','searches'].map(e=>`<div>${e}</div>`).join('')}</div></div>
-  <div class="card" style="margin-top:14px"><h2>Dados locais</h2><p class="meta">Leads salvos ficam neste navegador.</p><button class="btn" data-a="wipe">Apagar leads salvos</button></div>`}
+  <div class="card" style="margin-top:14px"><h2>Dados locais</h2><p class="meta">Leads salvos ficam neste navegador. Fonte da busca: OpenStreetMap, quando disponível; dados podem estar incompletos. A ausência de site significa que não há site cadastrado na fonte, não que a empresa certamente não tenha um.</p><button class="btn" data-a="wipe">Apagar leads salvos</button></div>`}
 };
 
 function render(){$('#view').innerHTML=V[view]();document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('on',n.dataset.v===view));$('#nSaved').textContent=Object.keys(saved).length;closeMenu();window.scrollTo(0,0)}
